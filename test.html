@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -29,80 +30,83 @@
 	
 
 		<script>
-			var atomstodraw = [];
+			var atomstodrawC = [];
+			var atomstodrawBi = [];
 			var camera, controls, scene, renderer;
 			var ambientLight, light, r = 0.0;
 			THREE.Cache.enabled = true;
-
 			var file = new THREE.FileLoader();
 			var lines;
-
+			
 			file.load(
 				// resource URL
 				'points.xyz',
-
 				// onLoad callback
 				function ( data ) {
-					a=3;
 					// output the text to the console
 					lines = data.split('\n');
 					var line;
 					var coordinates = [];
+					
 					for (var i = 0; i < lines.length; i++){
 						line = lines[i].split(' ');
+						
+						
 						if(line.length > 1){
 							for(var j=0;j<line.length;j++){
-								var point = parseFloat(line[j]);
-								if (! isNaN(point)){
-									coordinates.push(point);
+								if(line[j] != ''){
+									var point = parseFloat(line[j]);
+									if (! isNaN(point)){
+										coordinates.push(point);
+									}
+									else{
+										coordinates.push(line[j]);
+									}
 								}
 							}
 						}
-						if(coordinates.length === 3){
-							atomstodraw.push(coordinates);
+						if(coordinates[0] == 'C'){
+							atomstodrawC.push(coordinates);
 						}
-						coordinates = [];
+						if(coordinates[0] == 'Bi'){
+							atomstodrawBi.push(coordinates);
+						}
 						
+						coordinates = [];
 					}
 					
 					init();
 					buildGui();
 					animate();
 				},				
-
 				// onProgress callback
 				function ( xhr ) {
 					console.log( (xhr.loaded / xhr.total * 100) + '% loaded' );
 				},
-
 				// onError callback
 				function ( err ) {
 					console.error( 'An error happened loading the file' );
 				}
 			);
-
 			
 			var scene;
 			var spotLight;
 			var gui;
-
-
 			function init(){	
+				console.log(atomstodrawC);
+				console.log(atomstodrawBi);
+				
 				var SCREEN_WIDTH = window.innerWidth;
 				var SCREEN_HEIGHT = window.innerHeight;
 				
 				var container = document.createElement( 'div' );
 				document.body.appendChild( container );
-
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
 				container.appendChild( renderer.domElement );
-
-
 					
 				scene = new THREE.Scene();
-
 				var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 					
 				camera = new THREE.PerspectiveCamera(
@@ -113,18 +117,12 @@
 				);
 				camera.position.set( 10, 10, 30 );
 				camera.lookAt( scene.position );
-
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
 				controls.enableZoom = false;
 				controls.enableDamping = true;
-
-				controls.update();		
-
-				
-
+				controls.update();						
 				ambientLight = new THREE.AmbientLight(0x660000);
 				scene.add(ambientLight);
-
 				spotLight = new THREE.SpotLight( 0xffffff, 1 );
 				spotLight.position.set( 15, 40, 35 );
 				spotLight.angle = Math.PI / 4;
@@ -132,47 +130,41 @@
 				spotLight.decay = 2;
 				spotLight.distance = 200;
 				scene.add( spotLight );
-
 				
 				var mesh = new THREE.Mesh(
 					new THREE.SphereGeometry( 0.4, 16, 8 ),
-					new THREE.MeshStandardMaterial( { color: 0xffff00 } )
+					new THREE.MeshStandardMaterial( { color: 0x37eb37 } )
 				);
-
-				var duplicate = new THREE.Mesh(mesh.geometry, mesh.material);
-				duplicate.position.set(0,0,0);
-				scene.add(duplicate);
-
-
+				
 				var mesh2 = new THREE.Mesh(
 					new THREE.SphereGeometry( 0.5, 16, 8 ),
-					new THREE.MeshStandardMaterial( { color: 0x00ff00 } )
+					new THREE.MeshStandardMaterial( { color: 0x645cd } )
 				);		
-
-				mesh2.position.set(atomstodraw[0][0],atomstodraw[0][1],atomstodraw[0][2]);
-				scene.add(mesh2);
-
-				for(var i=1;i<atomstodraw.length;i++){
+				
+				for(var i=1;i<atomstodrawC.length;i++){
 					var duplicate = new THREE.Mesh(mesh.geometry, mesh.material);
-					duplicate.position.set(atomstodraw[i][0],atomstodraw[i][1],atomstodraw[i][2]);
+					duplicate.position.set(atomstodrawC[i][1],atomstodrawC[i][2],atomstodrawC[i][3]);
+					scene.add(duplicate);
+				}
+
+				for(var i=1;i<atomstodrawBi.length;i++){
+					var duplicate = new THREE.Mesh(mesh2.geometry, mesh2.material);
+					duplicate.position.set(atomstodrawBi[i][1],atomstodrawBi[i][2],atomstodrawBi[i][3]);
 					scene.add(duplicate);
 				}
 					
 				renderer.setClearColor( 0x000000, 1);
 				renderer.render( scene, camera );
 			}
-
 			function animate(){
 				requestAnimationFrame( animate );
 				
 				spotLight.position.x = 20 * Math.cos( r );
 				spotLight.position.z = 20 * Math.sin( r );
 				r += 0.01;
-
 				controls.update();
 				renderer.render( scene, camera );
 			}
-
 			function buildGui() {
 				gui = new dat.GUI();
 				var params = {
@@ -185,34 +177,31 @@
 				};
 				gui.addColor( params, 'light color' ).onChange( function ( val ) {
 					spotLight.color.setHex( val );
-					animate();
+					//animate();
 				} );
 				gui.add( params, 'intensity', 0, 2 ).onChange( function ( val ) {
 					spotLight.intensity = val;
-					animate();
+					//animate();
 				} );
 				gui.add( params, 'distance', 50, 200 ).onChange( function ( val ) {
 					spotLight.distance = val;
-					animate();
+					//animate();
 				} );
 				gui.add( params, 'angle', 0, Math.PI / 3 ).onChange( function ( val ) {
 					spotLight.angle = val;
-					animate();
+					//animate();
 				} );
 				gui.add( params, 'penumbra', 0, 1 ).onChange( function ( val ) {
 					spotLight.penumbra = val;
-					animate();
+					//animate();
 				} );
 				gui.add( params, 'decay', 1, 2 ).onChange( function ( val ) {
 					spotLight.decay = val;
-					animate();
+					//animate();
 				} );
 				gui.open();
 			}
-
 			
-
-
 		</script>
 
 	</body>
