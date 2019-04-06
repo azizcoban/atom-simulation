@@ -32,7 +32,7 @@
 		<script>
 			var atomstodrawC = [];
 			var atomstodrawBi = [];
-			var camera, controls, scene, renderer;
+			var camera, controls, scene, renderer,cubeCamera;
 			var ambientLight, light, r = 0.0;
 			THREE.Cache.enabled = true;
 			var file = new THREE.FileLoader();
@@ -76,7 +76,7 @@
 					}
 					
 					init();
-					buildGui();
+					//buildGui();
 					animate();
 				},				
 				// onProgress callback
@@ -91,7 +91,7 @@
 			
 			var scene;
 			var spotLight;
-			var gui;
+			
 			function init(){	
 				console.log(atomstodrawC);
 				console.log(atomstodrawBi);
@@ -109,49 +109,85 @@
 				scene = new THREE.Scene();
 				var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 					
-				camera = new THREE.PerspectiveCamera(
-					35,			// Field of view
-					aspect,		// Aspect ratio
-					10,			// Near plane
-					10000			// Far plane
-				);
+				camera = new THREE.PerspectiveCamera( 45, aspect, 2, 10000 );
 				camera.position.set( 10, 10, 30 );
 				camera.lookAt( scene.position );
+
+				cubeCamera = new THREE.CubeCamera( 1, 10000, 128 );
+
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
-				controls.enableZoom = false;
+				controls.enableZoom = true;
 				controls.enableDamping = true;
 				controls.update();						
-				ambientLight = new THREE.AmbientLight(0x660000);
+				ambientLight = new THREE.AmbientLight(0x000000);
 				scene.add(ambientLight);
-				spotLight = new THREE.SpotLight( 0xffffff, 1 );
-				spotLight.position.set( 15, 40, 35 );
-				spotLight.angle = Math.PI / 4;
-				spotLight.penumbra = 0.05;
-				spotLight.decay = 2;
-				spotLight.distance = 200;
-				scene.add( spotLight );
 				
-				var mesh = new THREE.Mesh(
-					new THREE.SphereGeometry( 0.4, 16, 8 ),
-					new THREE.MeshStandardMaterial( { color: 0x37eb37 } )
-				);
+				var light = new THREE.DirectionalLight( 0xffffff, 0.8 );
+				light.position.set(1,1,1);
+				scene.add( light );
+
+
+				var params = {
+					'C color': 0xffff00,
+					'Bi color':0xff0000,
+					'C roughness': 0.0,
+					'C metalness': 0.0,
+					'Bi roughness':0.0,
+					'Bi metalness':0.0
+				};
+
 				
-				var mesh2 = new THREE.Mesh(
-					new THREE.SphereGeometry( 0.5, 16, 8 ),
-					new THREE.MeshStandardMaterial( { color: 0x645cd } )
-				);		
+				var geometry = new THREE.SphereGeometry( 0.4, 32, 32 );
+				var material = new THREE.MeshStandardMaterial( {color: 0xffff00, metalness:params.metalness, roughness:params.roughness} );
+				var sphere = new THREE.Mesh( geometry, material );
+				scene.add( sphere );
+
+				var geometry2 = new THREE.SphereGeometry( 0.4, 32, 32 );
+				var material2 = new THREE.MeshStandardMaterial( {color: 0xff0000, metalness:params.metalness, roughness:params.roughness} );
+				var sphere2 = new THREE.Mesh( geometry2, material2 );
+				scene.add( sphere2 );
+				
 				
 				for(var i=1;i<atomstodrawC.length;i++){
-					var duplicate = new THREE.Mesh(mesh.geometry, mesh.material);
+					var duplicate = new THREE.Mesh(sphere.geometry, sphere.material);
 					duplicate.position.set(atomstodrawC[i][1],atomstodrawC[i][2],atomstodrawC[i][3]);
+					duplicate.add(cubeCamera);
 					scene.add(duplicate);
 				}
 
 				for(var i=1;i<atomstodrawBi.length;i++){
-					var duplicate = new THREE.Mesh(mesh2.geometry, mesh2.material);
+					var duplicate = new THREE.Mesh(sphere2.geometry, sphere2.material);
 					duplicate.position.set(atomstodrawBi[i][1],atomstodrawBi[i][2],atomstodrawBi[i][3]);
+					duplicate.add(cubeCamera);
 					scene.add(duplicate);
 				}
+
+				var gui = new dat.GUI();
+				
+				gui.addColor( params, 'C color' ).onChange( function ( val ) {
+					sphere.material.color.setHex( val );
+				} );
+				gui.addColor( params, 'Bi color' ).onChange( function ( val ) {
+					sphere2.material.color.setHex( val );
+				} );
+				
+				gui.add( params, "C metalness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
+					material.metalness = value;
+				} );
+				gui.add( params, "C roughness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
+					material.roughness = value;
+				} );
+				gui.add( params, "Bi metalness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
+					material2.metalness = value;
+				} );
+				
+				gui.add( params, "Bi roughness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
+					material2.roughness = value;
+				} );
+				
+
+				gui.open();
+
 					
 				renderer.setClearColor( 0x000000, 1);
 				renderer.render( scene, camera );
@@ -159,48 +195,14 @@
 			function animate(){
 				requestAnimationFrame( animate );
 				
-				spotLight.position.x = 20 * Math.cos( r );
-				spotLight.position.z = 20 * Math.sin( r );
-				r += 0.01;
+				/*light.position.x = 20 * Math.cos( r );
+				light.position.z = 20 * Math.sin( r );
+				r += 0.01; */
 				controls.update();
+				cubeCamera.update( renderer, scene );
 				renderer.render( scene, camera );
 			}
-			function buildGui() {
-				gui = new dat.GUI();
-				var params = {
-					'light color': spotLight.color.getHex(),
-					intensity: spotLight.intensity,
-					distance: spotLight.distance,
-					angle: spotLight.angle,
-					penumbra: spotLight.penumbra,
-					decay: spotLight.decay
-				};
-				gui.addColor( params, 'light color' ).onChange( function ( val ) {
-					spotLight.color.setHex( val );
-					//animate();
-				} );
-				gui.add( params, 'intensity', 0, 2 ).onChange( function ( val ) {
-					spotLight.intensity = val;
-					//animate();
-				} );
-				gui.add( params, 'distance', 50, 200 ).onChange( function ( val ) {
-					spotLight.distance = val;
-					//animate();
-				} );
-				gui.add( params, 'angle', 0, Math.PI / 3 ).onChange( function ( val ) {
-					spotLight.angle = val;
-					//animate();
-				} );
-				gui.add( params, 'penumbra', 0, 1 ).onChange( function ( val ) {
-					spotLight.penumbra = val;
-					//animate();
-				} );
-				gui.add( params, 'decay', 1, 2 ).onChange( function ( val ) {
-					spotLight.decay = val;
-					//animate();
-				} );
-				gui.open();
-			}
+			
 			
 		</script>
 
