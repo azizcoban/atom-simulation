@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 	<head>
@@ -27,17 +26,28 @@
 		<script src="..\three.js-master\three.js-master\examples\js\WebGL.js"></script>
 		<script src="..\three.js-master\three.js-master\examples\js\libs\stats.min.js"></script>
 		<script src='..\three.js-master\three.js-master\examples\js\libs\dat.gui.min.js'></script>
-	
 
 		<script>
-			var atomstodrawC = [];
-			var atomstodrawBi = [];
-			var camera, controls, scene, renderer,cubeCamera;
+			var atomNames = [];
+			var atomsToDraw = [];
+			var groups = [];
+			var params;
+			var activeSelection = 0;
+			var atomType = function(name, coordinates, geometry, material){
+					this.name = name;
+					this.coordinates = coordinates;
+					this.geometry = geometry;
+					this.material = material;
+				return this;
+			};
+			var camera, controls, scene, renderer;
 			var ambientLight, light, r = 0.0;
 			THREE.Cache.enabled = true;
 			var file = new THREE.FileLoader();
 			var lines;
-			
+			//----------------------
+			var turn = 0, cubeCamera1, cubeCamera2;
+			//---------------------------------
 			file.load(
 				// resource URL
 				'points.xyz',
@@ -51,7 +61,6 @@
 					for (var i = 0; i < lines.length; i++){
 						line = lines[i].split(' ');
 						
-						
 						if(line.length > 1){
 							for(var j=0;j<line.length;j++){
 								if(line[j] != ''){
@@ -61,23 +70,20 @@
 									}
 									else{
 										coordinates.push(line[j]);
+										if(!atomNames.includes(line[j])){
+											atomNames.push(line[j]);
+										}
 									}
 								}
 							}
 						}
-						if(coordinates[0] == 'C'){
-							atomstodrawC.push(coordinates);
-						}
-						if(coordinates[0] == 'Bi'){
-							atomstodrawBi.push(coordinates);
+						if(coordinates.length == 4){
+							atomsToDraw.push(coordinates);
 						}
 						
 						coordinates = [];
 					}
-					
 					init();
-					//buildGui();
-					animate();
 				},				
 				// onProgress callback
 				function ( xhr ) {
@@ -89,13 +95,8 @@
 				}
 			);
 			
-			var scene;
-			var spotLight;
 			
-			function init(){	
-				console.log(atomstodrawC);
-				console.log(atomstodrawBi);
-				
+			function init(){				
 				var SCREEN_WIDTH = window.innerWidth;
 				var SCREEN_HEIGHT = window.innerHeight;
 				
@@ -112,9 +113,6 @@
 				camera = new THREE.PerspectiveCamera( 45, aspect, 2, 10000 );
 				camera.position.set( 10, 10, 30 );
 				camera.lookAt( scene.position );
-
-				cubeCamera = new THREE.CubeCamera( 1, 10000, 128 );
-
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
 				controls.enableZoom = true;
 				controls.enableDamping = true;
@@ -122,84 +120,99 @@
 				ambientLight = new THREE.AmbientLight(0x000000);
 				scene.add(ambientLight);
 				
-				var light = new THREE.DirectionalLight( 0xffffff, 0.8 );
-				light.position.set(1,1,1);
+				var light = new THREE.DirectionalLight( 0xffffff , 1);
+				light.position.set(10,10,30);
 				scene.add( light );
-
-
-				var params = {
-					'C color': 0xffff00,
-					'Bi color':0xff0000,
-					'C roughness': 0.0,
-					'C metalness': 0.0,
-					'Bi roughness':0.0,
-					'Bi metalness':0.0
-				};
-
-				
-				var geometry = new THREE.SphereGeometry( 0.4, 32, 32 );
-				var material = new THREE.MeshStandardMaterial( {color: 0xffff00, metalness:params.metalness, roughness:params.roughness} );
-				var sphere = new THREE.Mesh( geometry, material );
-				scene.add( sphere );
-
-				var geometry2 = new THREE.SphereGeometry( 0.4, 32, 32 );
-				var material2 = new THREE.MeshStandardMaterial( {color: 0xff0000, metalness:params.metalness, roughness:params.roughness} );
-				var sphere2 = new THREE.Mesh( geometry2, material2 );
-				scene.add( sphere2 );
-				
-				
-				for(var i=1;i<atomstodrawC.length;i++){
-					var duplicate = new THREE.Mesh(sphere.geometry, sphere.material);
-					duplicate.position.set(atomstodrawC[i][1],atomstodrawC[i][2],atomstodrawC[i][3]);
-					duplicate.add(cubeCamera);
-					scene.add(duplicate);
+				var light2 = new THREE.DirectionalLight( 0xffffff , 1);
+				light2.position.set(-10,-10,-30);
+				scene.add( light2 );
+				//------------------------------
+				cubeCamera1 = new THREE.CubeCamera( 2, 10000, 512 );
+				scene.add( cubeCamera1 );
+				cubeCamera2 = new THREE.CubeCamera( 2, 10000, 512 );
+				scene.add( cubeCamera2 );
+				//------------------------------
+				for(var i=0, j=0;i<atomNames.length;i++){
+					var coordinates = [];
+					var newAtom = new atomType(atomNames[i],
+												coordinates,
+												new THREE.SphereGeometry( 0.6, 32, 32 ),
+												new THREE.MeshStandardMaterial( {color: 0xff0000,
+															metalness: 0.5,
+															roughness: 0,
+															envMap: cubeCamera2.renderTarget.texture} )
+													);
+					newAtom.material.color.setHex( Math.random() * 0xffffff );
+					for(;j<atomsToDraw.length;j++){
+						if(atomsToDraw[j][0] == atomNames[i]){
+							newAtom.coordinates.push(atomsToDraw[j]);
+						}
+						else{
+							break;
+						}
+					}
+					
+					groups.push(newAtom);
 				}
-
-				for(var i=1;i<atomstodrawBi.length;i++){
-					var duplicate = new THREE.Mesh(sphere2.geometry, sphere2.material);
-					duplicate.position.set(atomstodrawBi[i][1],atomstodrawBi[i][2],atomstodrawBi[i][3]);
-					duplicate.add(cubeCamera);
-					scene.add(duplicate);
+				if(groups.length == 0){
+					console.log("Error: no atoms loaded");
+					return;
+				}	
+				for(var i=0;i<groups.length;i++){
+					for(var j=0;j<groups[i].coordinates.length;j++){
+						var mesh = new THREE.Mesh(groups[i].geometry, groups[i].material);
+						mesh.position.set(groups[i].coordinates[j][1], groups[i].coordinates[j][2], groups[i].coordinates[j][3]);
+						scene.add(mesh);
+					}
 				}
-
 				var gui = new dat.GUI();
+				params = {
+					'Element': groups[activeSelection].name,
+					'Color': groups[activeSelection].material.color.getHex(),
+					'Roughness': groups[activeSelection].material.roughness,
+					'Metalness': groups[activeSelection].material.metalness,
+				};
+				gui.add( params, "Element", atomNames).onChange( function ( value ) {
+					activeSelection = atomNames.indexOf(value);
+				} ).listen();
 				
-				gui.addColor( params, 'C color' ).onChange( function ( val ) {
-					sphere.material.color.setHex( val );
+				gui.addColor( params, 'Color' ).onChange( function ( val ) {
+					groups[activeSelection].material.color.setHex( val );
+				} ).listen();
+				
+				gui.add( params, "Metalness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
+					groups[activeSelection].material.metalness = value;
+					console.log(gui);
 				} );
-				gui.addColor( params, 'Bi color' ).onChange( function ( val ) {
-					sphere2.material.color.setHex( val );
+				gui.add( params, "Roughness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
+					groups[activeSelection].material.roughness = value;
 				} );
 				
-				gui.add( params, "C metalness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
-					material.metalness = value;
-				} );
-				gui.add( params, "C roughness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
-					material.roughness = value;
-				} );
-				gui.add( params, "Bi metalness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
-					material2.metalness = value;
-				} );
-				
-				gui.add( params, "Bi roughness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
-					material2.roughness = value;
-				} );
-				
-
 				gui.open();
-
 					
 				renderer.setClearColor( 0x000000, 1);
 				renderer.render( scene, camera );
+				animate();
 			}
 			function animate(){
 				requestAnimationFrame( animate );
 				
-				/*light.position.x = 20 * Math.cos( r );
-				light.position.z = 20 * Math.sin( r );
-				r += 0.01; */
+				if ( turn == 0 ) {
+					for( var i=0;i<groups.length;i++ ) {
+						groups[i].material.envMap = cubeCamera1.renderTarget.texture;
+					} 
+					cubeCamera2.update( renderer, scene );
+					turn = 1;
+				} 
+				
+				else {
+					for(var i=0;i<groups.length;i++){
+						groups[i].material.envMap = cubeCamera2.renderTarget.texture;
+					} 
+					cubeCamera1.update( renderer, scene );
+					turn = 0;
+				}
 				controls.update();
-				cubeCamera.update( renderer, scene );
 				renderer.render( scene, camera );
 			}
 			
