@@ -32,7 +32,8 @@
 			var atomsToDraw = [];
 			var groups = [];
 			var params;
-			var activeSelection = 0;
+			
+			
 			var atomType = function(name, coordinates, geometry, material){
 					this.name = name;
 					this.coordinates = coordinates;
@@ -84,10 +85,6 @@
 						coordinates = [];
 					}
 					init();
-<<<<<<< HEAD
-=======
-					animate();
->>>>>>> bd5c8f8ad7b0b529989164f91446a539b6632193
 				},				
 				// onProgress callback
 				function ( xhr ) {
@@ -98,6 +95,7 @@
 					console.error( 'An error happened loading the file' );
 				}
 			);
+			
 			
 			
 			function init(){				
@@ -136,25 +134,25 @@
 				cubeCamera2 = new THREE.CubeCamera( 2, 10000, 512 );
 				scene.add( cubeCamera2 );
 				//------------------------------
-				for(var i=0, j=0;i<atomNames.length;i++){
-					var coordinates = [];
-					var newAtom = new atomType(atomNames[i],
-												coordinates,
+
+				
+				for(var i=0;i<atomsToDraw.length;i++){
+					var newAtom = new atomType(	atomsToDraw[i][0],
+												atomsToDraw[i].slice(1),
 												new THREE.SphereGeometry( 0.6, 32, 32 ),
 												new THREE.MeshStandardMaterial( {color: 0xff0000,
 															metalness: 0.5,
 															roughness: 0,
 															envMap: cubeCamera2.renderTarget.texture} )
 													);
-					newAtom.material.color.setHex( Math.random() * 0xffffff );
-					for(;j<atomsToDraw.length;j++){
-						if(atomsToDraw[j][0] == atomNames[i]){
-							newAtom.coordinates.push(atomsToDraw[j]);
-						}
-						else{
-							break;
-						}
-					}
+
+					if(newAtom.name == atomNames[0]){
+						newAtom.material.color.setHex(0xff45ff);
+					}		
+					else{
+						newAtom.material.color.setHex( 0xff0000 );
+					}						
+					
 					
 					groups.push(newAtom);
 				}
@@ -162,34 +160,76 @@
 					console.log("Error: no atoms loaded");
 					return;
 				}	
-				for(var i=0;i<groups.length;i++){
-					for(var j=0;j<groups[i].coordinates.length;j++){
-						var mesh = new THREE.Mesh(groups[i].geometry, groups[i].material);
-						mesh.position.set(groups[i].coordinates[j][1], groups[i].coordinates[j][2], groups[i].coordinates[j][3]);
-						scene.add(mesh);
-					}
+
+				// function for calculating distance between each pair
+				function calculateDistance(coordinate1, coordinate2){
+					var param1 = Math.pow(coordinate1[0] - coordinate2[0], 2);
+					var param2 = Math.pow(coordinate1[1] - coordinate2[1], 2);
+					var param3 = Math.pow(coordinate1[2] - coordinate2[2], 2);
+
+					var distance = Math.sqrt(param1 + param2 + param3);
+					return distance;
 				}
+
+				var pairDistances = [];
+				
+				
+				for(i = 0; i<groups.length; i++){
+					var distances = [];
+					for(j = i+1; j<groups.length; j++){
+						distances.push(calculateDistance(groups[i].coordinates, groups[j].coordinates));
+					}
+					pairDistances.push(distances);
+				}
+				
+				
+				var activeSelection = atomNames[0];
+			
+				// function for finding atom object according to their names.
+				function findAtom(groups){
+					var objects = [];
+					for(i = 0; i<groups.length; i++){
+						if(groups[i].name == activeSelection){
+							objects.push(groups[i])
+						}
+					}	
+					return objects;		
+				}
+
+
+				for(var i=0;i<groups.length;i++){
+					var mesh = new THREE.Mesh(groups[i].geometry, groups[i].material);
+						mesh.position.set(groups[i].coordinates[0], groups[i].coordinates[1], groups[i].coordinates[2]);
+						scene.add(mesh);
+				}
+
+
 				var gui = new dat.GUI();
 				params = {
-					'Element': groups[activeSelection].name,
-					'Color': groups[activeSelection].material.color.getHex(),
-					'Roughness': groups[activeSelection].material.roughness,
-					'Metalness': groups[activeSelection].material.metalness,
+					'Element': findAtom(groups)[0].name,
+					'Color': findAtom(groups)[0].material.color.getHex(),
+					'Roughness': findAtom(groups)[0].material.roughness,
+					'Metalness': findAtom(groups)[0].material.metalness,
 				};
 				gui.add( params, "Element", atomNames).onChange( function ( value ) {
-					activeSelection = atomNames.indexOf(value);
+					activeSelection = atomNames[atomNames.indexOf(value)];
 				} ).listen();
 				
-				gui.addColor( params, 'Color' ).onChange( function ( val ) {
-					groups[activeSelection].material.color.setHex( val );
+				gui.addColor( params, 'Color' ).onChange( function ( value ) {
+					findAtom(groups).forEach(obj => {
+						obj.material.color.setHex(value);
+					})
 				} ).listen();
 				
 				gui.add( params, "Metalness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
-					groups[activeSelection].material.metalness = value;
-					console.log(gui);
+					findAtom(groups).forEach(obj => {
+						obj.material.metalness = value;
+					})
 				} );
 				gui.add( params, "Roughness" ).min( 0 ).max( 1 ).onChange( function ( value ) {
-					groups[activeSelection].material.roughness = value;
+					findAtom(groups).forEach(obj => {
+						obj.material.roughness = value;
+					})
 				} );
 				
 				gui.open();
