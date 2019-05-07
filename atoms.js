@@ -194,7 +194,7 @@ function createLights(position) {
     var sphere = new THREE.SphereBufferGeometry( 0.3, 16, 8 );
     var lightMaterial = new THREE.MeshBasicMaterial({color: 0xffffff });
 
-    light = new THREE.PointLight( 0xff0040, 4, 500, 2);
+    light = new THREE.PointLight( 0xff0040, 4, 0, 2);
     var lightMesh = new THREE.Mesh(sphere, lightMaterial);
     lightMesh.position.set(position[0], position[1], position[2]);
     lightMesh.add(light);
@@ -211,20 +211,10 @@ function draw(){
     camera.lookAt( scene.position );
 
     
-    controls = new THREE.TrackballControls( camera );
-    controls.rotateSpeed = 10.0;
-    controls.zoomSpeed = 1.2;
-    controls.panSpeed = 0.8;
-    controls.noZoom = false;
-    controls.noPan = true;
-    controls.staticMoving = true;
-    controls.dynamicDampingFactor = 0.3; 
-
-    /*
     controls = new THREE.OrbitControls( camera, renderer.domElement );
     controls.enableZoom = true;
     controls.enableDamping = true;
-    controls.update();	*/
+    controls.update();
     					
     ambientLight = new THREE.AmbientLight(0xffffff,0.01);
     scene.add(ambientLight);
