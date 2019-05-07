@@ -11,7 +11,7 @@ var settingsParameters;
 var activeSelection;
 var activeBoneGroup = -1;
 var maxDistance = 0;
-var lights = [];
+var lights = []; //AZIZ COBAN NEW VARIABLE
 
 //--------------------------
 
@@ -190,6 +190,8 @@ function fillArrays(){
     }
 }
 
+//AZIZ COBAN NEW CODE
+
 function createLights(position) {
     var sphere = new THREE.SphereBufferGeometry( 0.3, 16, 8 );
     var lightMaterial = new THREE.MeshBasicMaterial({color: 0xffffff });
@@ -202,6 +204,7 @@ function createLights(position) {
     scene.add(lightMesh);
 }
 
+//END OF NEW CODE
 
 function draw(){
     var aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
@@ -219,28 +222,30 @@ function draw(){
     ambientLight = new THREE.AmbientLight(0xffffff,0.01);
     scene.add(ambientLight);
 
-    
+    //AZIZ COBAN NEW CODE
+
    createLights([0,10,20]);
    createLights([-5,-3,10]);
    createLights([2,5,-6]);
     
    
+   var dragControls = new THREE.DragControls( lights, camera, renderer.domElement );
+   dragControls.addEventListener( 'dragstart', function () {
+       controls.enabled = false;
+    } );
+    dragControls.addEventListener( 'dragend', function () {
+        controls.enabled = true;
+    } );
+   
+    //END OF NEW CODE    
+
+    
     //------------------------------
     /*cubeCamera1 = new THREE.CubeCamera( 2, 1000, 512 );
     scene.add( cubeCamera1 );
     cubeCamera2 = new THREE.CubeCamera( 2, 1000, 512 );
     scene.add( cubeCamera2 );*/
     //------------------------------
-
-    
-    var dragControls = new THREE.DragControls( lights, camera, renderer.domElement );
-    dragControls.addEventListener( 'dragstart', function () {
-        controls.enabled = false;
-    } );
-    dragControls.addEventListener( 'dragend', function () {
-        controls.enabled = true;
-    } );
-
     
 
     // function for finding atom object according to their names.
