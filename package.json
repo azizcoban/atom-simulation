@@ -1,0 +1,18 @@
+{
+  "name": "atom-simulation",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Interactive Three.js visualization of carbon and bismuth atomic structures loaded from XYZ coordinates.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.7"
+  }
+}
