@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Interactive Three.js visualization of carbon and bismuth atomic structures."
+    />
+    <title>Atom Simulation — C / Bi Structure Viewer</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="hud">
+        <div>
+          <p class="eyebrow">SCIENTIFIC VISUALIZATION</p>
+          <h1>Atom Simulation</h1>
+          <p class="subtitle">Carbon / Bismuth structure viewer</p>
+        </div>
+
+        <div class="stats" aria-live="polite">
+          <div>
+            <span id="atom-count">—</span>
+            <small>atoms</small>
+          </div>
+          <div>
+            <span id="bond-count">—</span>
+            <small>bonds</small>
+          </div>
+          <div>
+            <span id="structure-name">—</span>
+            <small>structure</small>
+          </div>
+        </div>
+      </header>
+
+      <aside class="panel">
+        <label class="file-button">
+          Load .xyz
+          <input id="file-input" type="file" accept=".xyz,text/plain" />
+        </label>
+
+        <div class="control">
+          <div>
+            <strong>Bonds</strong>
+            <span>Distance-based covalent bonds</span>
+          </div>
+          <input id="bonds-toggle" type="checkbox" checked />
+        </div>
+
+        <div class="control">
+          <div>
+            <strong>Auto rotate</strong>
+            <span>Slowly rotate the structure</span>
+          </div>
+          <input id="rotate-toggle" type="checkbox" checked />
+        </div>
+
+        <div class="legend">
+          <div><i class="carbon"></i><span>Carbon (C)</span></div>
+          <div><i class="bismuth"></i><span>Bismuth (Bi)</span></div>
+        </div>
+
+        <p class="hint">Drag to orbit · Scroll to zoom · Right-drag to pan</p>
+      </aside>
+
+      <div id="viewport"></div>
+
+      <footer>
+        <span>Originally built as a student project in 2019</span>
+        <span>Modernized with Three.js</span>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
